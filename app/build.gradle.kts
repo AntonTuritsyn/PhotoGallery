@@ -63,6 +63,7 @@ dependencies {
     implementation("io.coil-kt:coil:2.4.0")
     implementation("com.squareup.retrofit2:converter-gson:2.1.0")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("androidx.work:work-runtime-ktx:2.8.1")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

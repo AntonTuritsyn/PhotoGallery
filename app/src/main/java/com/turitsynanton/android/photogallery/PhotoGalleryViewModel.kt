@@ -7,13 +7,14 @@ import com.turitsynanton.android.photogallery.api.GalleryItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import retrofit2.http.Query
 
 private const val TAG = "PhotoGalleryViewModel"
-class PhotoGalleryViewModel: ViewModel() {
+
+class PhotoGalleryViewModel : ViewModel() {
     private val photoRepository = PhotoRepository()
     private val preferencesRepository = PreferencesRepository.get()
     private val _uiState: MutableStateFlow<PhotoGalleryUiState> = MutableStateFlow(
@@ -21,12 +22,12 @@ class PhotoGalleryViewModel: ViewModel() {
     )
     val uiState: StateFlow<PhotoGalleryUiState>
         get() = _uiState.asStateFlow()
-//    Блок запускает запрос данных фотографии при первом создании ViewModel (запрос будет создан только один раз)
+
+    //    Блок запускает запрос данных фотографии при первом создании ViewModel (запрос будет создан только один раз)
     init {
         viewModelScope.launch {
-            preferencesRepository.storedQuery.collectLatest {storedQuery ->
+            preferencesRepository.storedQuery.collectLatest { storedQuery ->
                 try {
-//                val items = photoRepository.searchPhotos("planets")
                     val items = fetchGalleryItems(storedQuery)
 //                Log.d(TAG, "Items received: $items")
                     _uiState.update { oldState ->
@@ -40,15 +41,27 @@ class PhotoGalleryViewModel: ViewModel() {
                 }
             }
         }
+
+        viewModelScope.launch {
+            preferencesRepository.isPolling.collect { isPolling ->
+                _uiState.update { it.copy(isPolling = isPolling) }
+            }
+        }
     }
 
-    fun setQuery(query: String){
-        viewModelScope.launch{
+    fun setQuery(query: String) {
+        viewModelScope.launch {
             preferencesRepository.setStoredQuery(query)
         }
     }
 
-    private suspend fun fetchGalleryItems(query: String) : List<GalleryItem> {
+    fun togglePolling() {
+        viewModelScope.launch {
+            preferencesRepository.setPolling(!uiState.value.isPolling)
+        }
+    }
+
+    private suspend fun fetchGalleryItems(query: String): List<GalleryItem> {
         return if (query.isNotEmpty()) {
             photoRepository.searchPhotos(query)
         } else {
@@ -59,5 +72,6 @@ class PhotoGalleryViewModel: ViewModel() {
 
 data class PhotoGalleryUiState(
     val images: List<GalleryItem> = listOf(),
-    val query: String = ""
+    val query: String = "",
+    val isPolling: Boolean = false
 )

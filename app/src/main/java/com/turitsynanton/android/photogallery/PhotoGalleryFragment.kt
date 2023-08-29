@@ -15,17 +15,22 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
-import com.turitsynanton.android.photogallery.api.FlickrApi
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.turitsynanton.android.photogallery.databinding.FragmentPhotoGalleryBinding
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import retrofit2.Retrofit
-import retrofit2.create
+import java.util.concurrent.TimeUnit
 
 private const val TAG = "PhotoGalleryFragment"
+private const val POLL_WORK = "POLL_WORK"
+
 class PhotoGalleryFragment : Fragment() {
 
     private var searchView: SearchView? = null
+    private var pollingMenuItem: MenuItem? = null
     private var _binding: FragmentPhotoGalleryBinding? = null
     private val binding
         get() = checkNotNull(_binding) {
@@ -54,9 +59,10 @@ class PhotoGalleryFragment : Fragment() {
 //        создание объекта Retrofit
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                photoGalleryViewModel.uiState.collect {state ->
+                photoGalleryViewModel.uiState.collect { state ->
                     binding.photoGrid.adapter = PhotoListAdapter(state.images)
                     searchView?.setQuery(state.query, false)
+                    updatePollingState(state.isPolling)
                 }
             }
         }
@@ -73,8 +79,9 @@ class PhotoGalleryFragment : Fragment() {
 
         val searchItem: MenuItem = menu.findItem(R.id.menu_item_search)
         searchView = searchItem.actionView as? SearchView
+        pollingMenuItem = menu.findItem(R.id.menu_item_toggle_polling)
 
-        searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener{
+        searchView?.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 Log.d(TAG, "QueryTextSubmit: $query")
                 photoGalleryViewModel.setQuery(query ?: "")
@@ -91,14 +98,49 @@ class PhotoGalleryFragment : Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.menu_item_clear -> {
-            photoGalleryViewModel.setQuery("")
-            true
-        } else -> super.onOptionsItemSelected(item)
+                photoGalleryViewModel.setQuery("")
+                true
+            }
+            R.id.menu_item_toggle_polling -> {
+                photoGalleryViewModel.togglePolling()
+                true
+            }
+
+            else -> super.onOptionsItemSelected(item)
         }
     }
 
     override fun onDestroyOptionsMenu() {
         super.onDestroyOptionsMenu()
         searchView = null
+        pollingMenuItem = null
     }
+
+    private fun updatePollingState(isPolling: Boolean) {
+        val toggleItemTitle = if (isPolling) {
+            R.string.stop_polling
+        } else {
+            R.string.start_polling
+        }
+        pollingMenuItem?.setTitle(toggleItemTitle)
+
+        if (isPolling) {
+            // настройка работы только через безлимитную сеть
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.UNMETERED)
+                .build()
+            val periodicRequest = PeriodicWorkRequestBuilder<PollWorker>(15, TimeUnit.MINUTES)
+                .setConstraints(constraints)
+                .build()
+            WorkManager.getInstance(requireContext()).enqueueUniquePeriodicWork(
+                POLL_WORK,
+                ExistingPeriodicWorkPolicy.KEEP,            // сообщает, что делать, если уже запланирован запрос на работу. KEEP - отклоняет запрос в пользу существующего
+                periodicRequest
+            )
+        } else {
+//            Если воркер уже запущен, нужно сообщить WorkManager, чтобы он отменил запрос на работу
+            WorkManager.getInstance(requireContext()).cancelUniqueWork(POLL_WORK)
+        }
+    }
+
 }
