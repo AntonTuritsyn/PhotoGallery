@@ -1,13 +1,14 @@
-package com.turitsynanton.android.photogallery
+package com.turitsynanton.android.photogallery.photogallery
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.turitsynanton.android.photogallery.api.GalleryItem
+import com.turitsynanton.android.photogallery.repository.PhotoRepository
+import com.turitsynanton.android.photogallery.repository.PreferencesRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch

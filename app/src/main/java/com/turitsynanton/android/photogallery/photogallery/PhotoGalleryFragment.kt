@@ -1,4 +1,4 @@
-package com.turitsynanton.android.photogallery
+package com.turitsynanton.android.photogallery.photogallery
 
 import android.os.Bundle
 import android.util.Log
@@ -14,12 +14,15 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.turitsynanton.android.photogallery.PollWorker
+import com.turitsynanton.android.photogallery.R
 import com.turitsynanton.android.photogallery.databinding.FragmentPhotoGalleryBinding
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
@@ -60,7 +63,17 @@ class PhotoGalleryFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 photoGalleryViewModel.uiState.collect { state ->
-                    binding.photoGrid.adapter = PhotoListAdapter(state.images)
+                    binding.photoGrid.adapter = PhotoListAdapter(
+                        state.images
+                    ) { photoPageUri ->
+//                        интент на открытие в браузере
+                        /*val intent = Intent(Intent.ACTION_VIEW, photoPageUri)
+                        startActivity(intent)*/
+//                        открытие в WebView
+                        findNavController().navigate(
+                            PhotoGalleryFragmentDirections.showPhoto(photoPageUri)
+                        )
+                    }
                     searchView?.setQuery(state.query, false)
                     updatePollingState(state.isPolling)
                 }
@@ -101,6 +114,7 @@ class PhotoGalleryFragment : Fragment() {
                 photoGalleryViewModel.setQuery("")
                 true
             }
+
             R.id.menu_item_toggle_polling -> {
                 photoGalleryViewModel.togglePolling()
                 true

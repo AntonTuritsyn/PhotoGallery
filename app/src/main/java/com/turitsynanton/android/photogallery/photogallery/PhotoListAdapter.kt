@@ -1,25 +1,28 @@
-package com.turitsynanton.android.photogallery
+package com.turitsynanton.android.photogallery.photogallery
 
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.turitsynanton.android.photogallery.api.FlickrResponse
 import coil.load
+import com.turitsynanton.android.photogallery.R
 import com.turitsynanton.android.photogallery.api.GalleryItem
 import com.turitsynanton.android.photogallery.databinding.ListItemGalleryBinding
 
 class PhotoViewHolder(
     private val binding: ListItemGalleryBinding
 ): RecyclerView.ViewHolder (binding.root){
-    fun bind(galleryItem: GalleryItem) {
+    fun bind(galleryItem: GalleryItem, onItemClicked: (Uri) -> Unit) {
         binding.itemImageView.load(galleryItem.url) {
             placeholder(R.drawable.bill_up_close)
         }
+        binding.root.setOnClickListener { onItemClicked(galleryItem.photoPageUri) }
     }
 }
 
 class PhotoListAdapter (
-    private val galleryItems: List<GalleryItem>
+    private val galleryItems: List<GalleryItem>,
+    private val onItemClicked: (Uri) -> Unit
 ) : RecyclerView.Adapter<PhotoViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder {
@@ -30,7 +33,7 @@ class PhotoListAdapter (
 
     override fun onBindViewHolder(holder: PhotoViewHolder, position: Int) {
         val item = galleryItems[position]
-        holder.bind(item)
+        holder.bind(item, onItemClicked)
     }
 
     override fun getItemCount() = galleryItems.size

@@ -7,6 +7,8 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.turitsynanton.android.photogallery.repository.PhotoRepository
+import com.turitsynanton.android.photogallery.repository.PreferencesRepository
 import kotlinx.coroutines.flow.first
 
 private const val TAG = "PollWorker"

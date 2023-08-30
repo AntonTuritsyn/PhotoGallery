@@ -1,4 +1,4 @@
-package com.turitsynanton.android.photogallery
+package com.turitsynanton.android.photogallery.repository
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -60,7 +60,7 @@ class PreferencesRepository private constructor(
                 INSTANCE = PreferencesRepository(dataStore)
             }
         }
-        fun get(): PreferencesRepository{
+        fun get(): PreferencesRepository {
             return INSTANCE ?: throw IllegalStateException(
                 "PreferencesRepository must be initialized"
             )

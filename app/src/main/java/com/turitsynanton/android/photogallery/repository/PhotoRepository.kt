@@ -1,9 +1,8 @@
-package com.turitsynanton.android.photogallery
+package com.turitsynanton.android.photogallery.repository
 
-import com.squareup.moshi.Moshi
+import com.turitsynanton.android.photogallery.PhotoInterceptor
 import com.turitsynanton.android.photogallery.api.FlickrApi
 import com.turitsynanton.android.photogallery.api.GalleryItem
-import com.turitsynanton.android.photogallery.api.FlickrResponse
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
